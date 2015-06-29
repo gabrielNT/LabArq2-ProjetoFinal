@@ -14,9 +14,16 @@ to see the file use external application ( graphic viewer)
 #include <stdio.h>
 #include <math.h>
 #include <xmmintrin.h>
+#include <time.h>
 
 int main()
 {
+	// Variaveis para medir o tempo
+	clock_t begin, end;
+	double time_spent;
+
+	begin = clock();
+
 	/* screen ( integer) coordinate */
 	int iX, iY;
 	const int iXmax = 16384;
@@ -38,14 +45,14 @@ int main()
 	static unsigned char color[3];
 	int vetorCoresAux[4];
 	/* Z=Zx+Zy*i  ;   Z0 = 0 */
-	float Zx[4], Zy[4];
-	float Zx2[4], Zy2[4]; /* Zx2=Zx*Zx;  Zy2=Zy*Zy  */
+	float Zx, Zy;
+	float Zx2, Zy2; /* Zx2=Zx*Zx;  Zy2=Zy*Zy  */
 	/*  */
-	int Iteration[4];
+	int Iteration0, Iteration1, Iteration2, Iteration3;
 	const int IterationMax = 256;
 	/* bail-out value , radius of circle ;  */
 	const float EscapeRadius = 2;
-	double ER2 = EscapeRadius*EscapeRadius;
+	float ER2 = EscapeRadius*EscapeRadius;
 	/*create new file,give it a name and open it in binary mode  */
 	fp = fopen(filename, "wb"); /* b -  binary mode */
 	/*write ASCII header to the file*/
@@ -74,44 +81,62 @@ int main()
 				movups xmm5, simdIx
 				mulps xmm5, PixelWidth128
 				addps xmm5, CxMin128    // xmm5 = CxMin + iX*PixelWidth
-
-
-				/* initial value of orbit = critical point Z= 0 */
-				xorps xmm0, xmm0	// Zx = 0
-				xorps xmm1, xmm1	// Zy = 0
-				xorps xmm2, xmm2	// Zx2 = 0
-				xorps xmm3, xmm3   // Zy2 = 0
-
-				/*
-				mulps xmm1, xmm0	
-				mulps xmm1, value2_128
-				addps xmm1, Cy128	// Zy = 2 * Zx*Zy + Cy
-				movups xmm0, xmm2
-				subps xmm0, xmm3
-				addpps xmm0, xmm5	// Zx = Zx2 - Zy2 + Cx
-				*/
-
-				movups Zx, xmm0
-				movups Zy, xmm1
-				movups Zx2, xmm2
-				movups Zy2, xmm3
 				movups _Cx, xmm5
 			}
 
-			// Volta para C, nao e possivel realizar paralelamente
-			for (int i = 0; i < 4; i++)
-				for (Iteration[i] = 0; Iteration[i]<IterationMax && ((Zx2[i] + Zy2[i])<ER2); Iteration[i]++)
-				{
-					Zy[i] = 2 * Zx[i]*Zy[i] + Cy;
-					Zx[i] = Zx2[i] - Zy2[i] + _Cx[i];
-					Zx2[i] = Zx[i]*Zx[i];
-					Zy2[i] = Zy[i]*Zy[i];
-				}
 			
+			Zx = 0;
+			Zy = 0;
+			Zx2 = 0;
+			Zy2 = 0;
+
+			for (Iteration0 = 0; Iteration0 < IterationMax && ((Zx2 + Zy2) < ER2); Iteration0++){
+				Zy = 2 * Zx * Zy + Cy;
+				Zx = Zx2 - Zy2 + _Cx[0];
+				Zx2 = Zx * Zx;
+				Zy2 = Zy * Zy;
+			}
+
+			Zx = 0;
+			Zy = 0;
+			Zx2 = 0;
+			Zy2 = 0;
+
+			for (Iteration1 = 0; Iteration1 < IterationMax && ((Zx2 + Zy2) < ER2); Iteration1++){
+				Zy = 2 * Zx * Zy + Cy;
+				Zx = Zx2 - Zy2 + _Cx[1];
+				Zx2 = Zx * Zx;
+				Zy2 = Zy * Zy;
+			}
+
+			Zx = 0;
+			Zy = 0;
+			Zx2 = 0;
+			Zy2 = 0;
+
+			for (Iteration2 = 0; Iteration2 < IterationMax && ((Zx2 + Zy2) < ER2); Iteration2++){
+				Zy = 2 * Zx * Zy + Cy;
+				Zx = Zx2 - Zy2 + _Cx[2];
+				Zx2 = Zx * Zx;
+				Zy2 = Zy * Zy;
+			}
+
+			Zx = 0;
+			Zy = 0;
+			Zx2 = 0;
+			Zy2 = 0;
+
+			for (Iteration3 = 0; Iteration3 < IterationMax && ((Zx2 + Zy2) < ER2); Iteration3++){
+				Zy = 2 * Zx * Zy + Cy;
+				Zx = Zx2 - Zy2 + _Cx[3];
+				Zx2 = Zx * Zx;
+				Zy2 = Zy * Zy;
+			}
+
 			_asm{
-				movups xmm0, Iteration
+				movups xmm0, Iteration0
 				movups xmm4, IterationMax128
-				movups xmm5, Iteration
+				movups xmm5, xmm0
 
 				xorps xmm1, xmm1	// xmm1 = color[0], xmm2 = color[1], xmm3 = color[2]
 				xorps xmm2, xmm2	
@@ -132,9 +157,15 @@ int main()
 				
 				/*write color to the file*/
 				fwrite(color, 1, 3, fp);
+
 			};
 		}
 	}
 	fclose(fp);
+
+	end = clock();
+	time_spent = (double)(end - begin) / CLOCKS_PER_SEC;;
+	printf("%f", time_spent);
+
 	return 0;
 }
