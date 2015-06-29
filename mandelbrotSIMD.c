@@ -48,7 +48,7 @@ int main()
 	float Zx, Zy;
 	float Zx2, Zy2; /* Zx2=Zx*Zx;  Zy2=Zy*Zy  */
 	/*  */
-	int Iteration0, Iteration1, Iteration2, Iteration3;
+	int Iteration[4];
 	const int IterationMax = 256;
 	/* bail-out value , radius of circle ;  */
 	const float EscapeRadius = 2;
@@ -57,9 +57,9 @@ int main()
 	fp = fopen(filename, "wb"); /* b -  binary mode */
 	/*write ASCII header to the file*/
 	fprintf(fp, "P6\n %d\n %d\n %d\n", iXmax, iYmax, MaxColorComponentValue);
-	
+
 	/* compute and write image data bytes to the file*/
-	
+
 	// Gera uma quatro palavras de 32 bits, com valor PixelWidth
 	// Funcao intrinseca
 	__m128 PixelWidth128 = _mm_set1_ps(PixelWidth);
@@ -71,7 +71,7 @@ int main()
 		Cy = CyMin + iY*PixelHeight;
 
 		if (fabs(Cy)< PixelHeight / 2) Cy = 0.0; /* Main antenna */
-		for (iX = 0; iX<iXmax/4; iX++)
+		for (iX = 0; iX<iXmax / 4; iX++)
 		{
 			float simdIx[4];
 			for (int i = 0; i < 4; i++)
@@ -79,74 +79,41 @@ int main()
 
 			_asm{
 				movups xmm5, simdIx
-				mulps xmm5, PixelWidth128
-				addps xmm5, CxMin128    // xmm5 = CxMin + iX*PixelWidth
-				movups _Cx, xmm5
+					mulps xmm5, PixelWidth128
+					addps xmm5, CxMin128    // xmm5 = CxMin + iX*PixelWidth
+					movups _Cx, xmm5
 			}
 
-			
-			Zx = 0;
-			Zy = 0;
-			Zx2 = 0;
-			Zy2 = 0;
+			for (int i = 0; i < 4; i++){
+				Zx = 0;
+				Zy = 0;
+				Zx2 = 0;
+				Zy2 = 0;
 
-			for (Iteration0 = 0; Iteration0 < IterationMax && ((Zx2 + Zy2) < ER2); Iteration0++){
-				Zy = 2 * Zx * Zy + Cy;
-				Zx = Zx2 - Zy2 + _Cx[0];
-				Zx2 = Zx * Zx;
-				Zy2 = Zy * Zy;
+				for (Iteration[i] = 0; Iteration[i] < IterationMax && ((Zx2 + Zy2) < ER2); Iteration[i]++)
+				{
+					Zy = 2 * Zx * Zy + Cy;
+					Zx = Zx2 - Zy2 + _Cx[i];
+					Zx2 = Zx * Zx;
+					Zy2 = Zy * Zy;
+				}
 			}
 
-			Zx = 0;
-			Zy = 0;
-			Zx2 = 0;
-			Zy2 = 0;
-
-			for (Iteration1 = 0; Iteration1 < IterationMax && ((Zx2 + Zy2) < ER2); Iteration1++){
-				Zy = 2 * Zx * Zy + Cy;
-				Zx = Zx2 - Zy2 + _Cx[1];
-				Zx2 = Zx * Zx;
-				Zy2 = Zy * Zy;
-			}
-
-			Zx = 0;
-			Zy = 0;
-			Zx2 = 0;
-			Zy2 = 0;
-
-			for (Iteration2 = 0; Iteration2 < IterationMax && ((Zx2 + Zy2) < ER2); Iteration2++){
-				Zy = 2 * Zx * Zy + Cy;
-				Zx = Zx2 - Zy2 + _Cx[2];
-				Zx2 = Zx * Zx;
-				Zy2 = Zy * Zy;
-			}
-
-			Zx = 0;
-			Zy = 0;
-			Zx2 = 0;
-			Zy2 = 0;
-
-			for (Iteration3 = 0; Iteration3 < IterationMax && ((Zx2 + Zy2) < ER2); Iteration3++){
-				Zy = 2 * Zx * Zy + Cy;
-				Zx = Zx2 - Zy2 + _Cx[3];
-				Zx2 = Zx * Zx;
-				Zy2 = Zy * Zy;
-			}
 
 			_asm{
-				movups xmm0, Iteration0
-				movups xmm4, IterationMax128
-				movups xmm5, xmm0
+				movups xmm0, Iteration
+					movups xmm4, IterationMax128
+					movups xmm5, xmm0
 
-				xorps xmm1, xmm1	// xmm1 = color[0], xmm2 = color[1], xmm3 = color[2]
-				xorps xmm2, xmm2	
-				xorps xmm3, xmm3
+					xorps xmm1, xmm1	// xmm1 = color[0], xmm2 = color[1], xmm3 = color[2]
+					xorps xmm2, xmm2
+					xorps xmm3, xmm3
 
-				cmpneqps xmm0, xmm4
-				psubd xmm4, xmm5
-				andps xmm0, xmm4
+					cmpneqps xmm0, xmm4
+					psubd xmm4, xmm5
+					andps xmm0, xmm4
 
-				movups vetorCoresAux, xmm0	
+					movups vetorCoresAux, xmm0
 			}
 
 			// Volta para C para poder realizar operacao modulo
@@ -154,7 +121,7 @@ int main()
 				color[0] = (char)((vetorCoresAux[i] % 8) * 63);  /* Red */
 				color[1] = (char)((vetorCoresAux[i] % 4) * 127);  /* Green */
 				color[2] = (char)((vetorCoresAux[i] % 2) * 255);  /* Blue */
-				
+
 				/*write color to the file*/
 				fwrite(color, 1, 3, fp);
 
