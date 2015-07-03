@@ -16,6 +16,10 @@ to see the file use external application ( graphic viewer)
 #include <time.h>
 #include <omp.h>
 
+#ifndef MIC_DEV
+#define MIC_DEV 0
+#endif
+
 int main()
 {
 	// Variaveis para medir o tempo
@@ -29,7 +33,7 @@ int main()
 	const int iXmax = 16384;
 	const int iYmax = 16384;
 	/* world ( double) coordinate = parameter plane*/
-	double Cx, Cy;
+	double Cy;
 	const double CxMin = -2.5;
 	const double CxMax = 1.5;
 	const double CyMin = -2.0;
@@ -43,11 +47,6 @@ int main()
 	FILE * fp;
 	char *filename = "mandelbrot.ppm";
 	static unsigned char color[3];
-	/* Z=Zx+Zy*i  ;   Z0 = 0 */
-	double Zx, Zy;
-	double Zx2, Zy2; /* Zx2=Zx*Zx;  Zy2=Zy*Zy  */
-	/*  */
-	int Iteration;
 	const int IterationMax = 256;
 	/* bail-out value , radius of circle ;  */
 	const double EscapeRadius = 2;
@@ -58,13 +57,19 @@ int main()
 	fprintf(fp, "P6\n %d\n %d\n %d\n", iXmax, iYmax, MaxColorComponentValue);
 	/* compute and write image data bytes to the file*/
 
-#pragma omp parallel for private(Cx, color, Iteration, iX, iY) ordered
 	for (iY = 0; iY<iYmax; iY++)
 	{
 		Cy = CyMin + iY*PixelHeight;
 		if (fabs(Cy)< PixelHeight / 2) Cy = 0.0; /* Main antenna */
+
+		#pragma omp parallel for ordered
 		for (iX = 0; iX<iXmax; iX++)
 		{
+			double Cx;
+			int Iteration;
+			double Zx, Zy;
+			double Zx2, Zy2; /* Zx2=Zx*Zx;  Zy2=Zy*Zy  */
+
 			Cx = CxMin + iX*PixelWidth;
 			/* initial value of orbit = critical point Z= 0 */
 			Zx = 0.0;
@@ -72,15 +77,20 @@ int main()
 			Zx2 = 0.0;
 			Zy2 = 0.0;
 			/* */
-	
-#pragma omp ordered
-			for (Iteration = 0; Iteration<IterationMax && ((Zx2 + Zy2)<ER2); Iteration++)
+
+			#pragma omp ordered
 			{
-				Zy = 2 * Zx*Zy + Cy;
-				Zx = Zx2 - Zy2 + Cx;
-				Zx2 = Zx*Zx;
-				Zy2 = Zy*Zy;
-			};
+				for (Iteration = 0; Iteration < IterationMax && ((Zx2 + Zy2) < ER2); Iteration++)
+				{
+					#pragma offload target(mic:MIC_DEV) in(Zy, Zx, Zx2, Zy2) inout(Iteration)
+					{
+						Zy = 2 * Zx*Zy + Cy;
+						Zx = Zx2 - Zy2 + Cx;
+						Zx2 = Zx*Zx;
+						Zy2 = Zy*Zy;
+					}
+				};
+			}
 
 			/* compute  pixel color (24 bit = 3 bytes) */
 			if (Iteration == IterationMax)
@@ -104,6 +114,6 @@ int main()
 	end = clock();
 	time_spent = (double)(end - begin) / CLOCKS_PER_SEC;;
 	printf("%f", time_spent);
-	
+
 	return 0;
 }
