@@ -1,7 +1,5 @@
 @echo off
 
-call "c:\Program Files (x86)\Microsoft Visual Studio 12.0\vc\vcvarsall.bat" x86
-
 cl  mandelbrot.c
 ECHO Start Measure - mandelbrot %Time% >> timer.txt
 FOR /L %%G IN (1,1,5) DO (
@@ -31,12 +29,12 @@ FOR /L %%G IN (1,1,5) DO (
 ECHO Stop Measure - mandelbrotSSE__iX_iY %TIME% >> timer.txt
 
 
-cl  mandelbrotAVX_iX.c
+cl /arch:AVX mandelbrotAVX_iX.c
 ECHO Start Measure - mandelbrotAVX_iX %Time% >> timer.txt
 FOR /L %%G IN (1,1,5) DO (
 	mandelbrotAVX_iX.exe
 ) 
-ECHO Stop Measure - mandelbrotSSEAVX_iX %TIME% >> timer.txt
+ECHO Stop Measure - mandelbrotAVX_iX %TIME% >> timer.txt
 
 cl /arch:AVX  mandelbrotAVX_iY.c
 ECHO Start Measure - mandelbrotAVX_iY %Time% >> timer.txt
