@@ -11,7 +11,7 @@
     * **PC1:**[Intel Core i7-2600(8MB Cache, 3.8Ghz, 4 Cores)](http://ark.intel.com/products/52213/Intel-Core-i7-2600-Processor-8M-Cache-up-to-3_80-GHz), 8 GB de RAM  
     * **PC2:**[Intel Core i5-540M(3MB Cache, 2.53Ghz, 2 Cores)](http://ark.intel.com/products/43544/Intel-Core-i5-540M-Processor-3M-Cache-2_53-GHz), 4 GB de RAM(Não possui conjunto de instruções AVX)
     * **PC3:**[Intel Core i3-2310M(3MB Cache, 2.10Ghz, 2 Cores)](http://ark.intel.com/products/52220/Intel-Core-i3-2310M-Processor-3M-Cache-2_10-GHz), 4 GB de RAM
-  * Para os testes de desempenho, os programas foram executados 5 vezes, utilizando uma média aritmética, para minimizar as eventuais flutuações nos valores.
+  * Para os testes de desempenho, os programas foram executados 5 vezes, utilizando uma média aritmética, para minimizar as eventuais flutuações nos valores. Os testes foram feitos utilizando arquivos bat que rodam os programas várias vezes e criam um log com os tempos de execução(*averageTime.bat* e *averageTime_sse.bat*)
   * Foram utilizadas instruções SIMD de carregamento não alinhadas. A alternativa parecia complicada demais para o escopo da proposta, e os efeitos disso(mais detalhados a seguir) não foram descobertos até muito tarde no desenvolvimento do projeto.
 
 # Abordagem na Paralelização
