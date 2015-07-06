@@ -8,17 +8,13 @@ using Mandelbrot algorithm ( boolean escape time )
 2. technique of creating ppm file is  based on the code of Claudio Rocchini
 http://en.wikipedia.org/wiki/Image:Color_complex_plot.jpg
 create 24 bit color graphic file ,  portable pixmap file = PPM
-see http://en.wikipedia.org/wiki/Portable_pixmap
+see http://en.wikipedia.org/wiki/Portable_pixmapfile:///C:/Users/Gabriel/Downloads/offload.c
 to see the file use external application ( graphic viewer)
 */
 #include <stdio.h>
 #include <math.h>
 #include <time.h>
 #include <omp.h>
-
-#ifndef MIC_DEV
-#define MIC_DEV 0
-#endif
 
 int main()
 {
@@ -45,7 +41,7 @@ int main()
 	/* it is 24 bit color RGB file */
 	const int MaxColorComponentValue = 255;
 	FILE * fp;
-	char *filename = "mandelbrot.ppm";
+	char *filename = "_openMP.ppm";
 	static unsigned char color[3];
 	const int IterationMax = 256;
 	/* bail-out value , radius of circle ;  */
@@ -57,13 +53,13 @@ int main()
 	fprintf(fp, "P6\n %d\n %d\n %d\n", iXmax, iYmax, MaxColorComponentValue);
 	/* compute and write image data bytes to the file*/
 
-	for (iY = 0; iY<iYmax; iY++)
+	for (iY = 0; iY < iYmax; iY++)
 	{
 		Cy = CyMin + iY*PixelHeight;
-		if (fabs(Cy)< PixelHeight / 2) Cy = 0.0; /* Main antenna */
+		if (fabs(Cy) < PixelHeight / 2) Cy = 0.0; /* Main antenna */
 
-		#pragma omp parallel for ordered
-		for (iX = 0; iX<iXmax; iX++)
+#pragma omp parallel for ordered
+		for (iX = 0; iX < iXmax; iX++)
 		{
 			double Cx;
 			int Iteration;
@@ -78,11 +74,10 @@ int main()
 			Zy2 = 0.0;
 			/* */
 
-			#pragma omp ordered
+#pragma omp ordered
 			{
 				for (Iteration = 0; Iteration < IterationMax && ((Zx2 + Zy2) < ER2); Iteration++)
 				{
-					#pragma offload target(mic:MIC_DEV) in(Zy, Zx, Zx2, Zy2) inout(Iteration)
 					{
 						Zy = 2 * Zx*Zy + Cy;
 						Zx = Zx2 - Zy2 + Cx;
@@ -109,6 +104,7 @@ int main()
 			fwrite(color, 1, 3, fp);
 		}
 	}
+
 	fclose(fp);
 
 	end = clock();
