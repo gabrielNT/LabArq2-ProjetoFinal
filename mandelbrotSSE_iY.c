@@ -41,7 +41,7 @@ int main()
 	/* it is 24 bit color RGB file */
 	const int MaxColorComponentValue = 255;
 	FILE * fp;
-	char *filename = "_simd_sse_iY";
+	char *filename = "_simd_sse_iY.ppm";
 	static unsigned char color[3];
 	
 	/* Z=Zx+Zy*i  ;   Z0 = 0 */
@@ -72,7 +72,7 @@ int main()
 		// Gera os indices e coloca em simdIx
 		float simdIy[4];
 		for (int i = 0; i < 4; i++)
-			simdIY[i] = iY * 4.0 + i;
+			simdIy[i] = iY * 4.0 + i;
 
 		_asm{	
 			// xmm5 = CyMin + iY*PixelWidth

@@ -14,6 +14,7 @@ to see the file use external application ( graphic viewer)
 3.Versao otimizada com inline assembly, com o conjunto de instrucoes SSE4_2. Essa versao
 paralelizou o loop em iX.
 */
+
 #include <stdio.h>
 #include <math.h>
 #include <xmmintrin.h>
@@ -42,15 +43,11 @@ int main()
 	char *filename = "_simd_sse_iX.ppm";
 	static unsigned char color[3];
 
-	// Foi criado um vetor auxiliar onde sera feita parte do calculo de color[]
-	int vetorCoresAux[4];
-
 	/* Z=Zx+Zy*i  ;   Z0 = 0 */
 	float Zx, Zy;
 	float Zx2, Zy2; /* Zx2=Zx*Zx;  Zy2=Zy*Zy  */
 
-	// A variavel Iteration foi extendida para um vetor, para aproveitar o uso dos registradores sse
-	int Iteration[4];
+	int Iteration;
 	const int IterationMax = 256;
 
 	/* bail-out value , radius of circle ;  */
@@ -63,7 +60,7 @@ int main()
 	/*write ASCII header to the file*/
 	fprintf(fp, "P6\n %d\n %d\n %d\n", iXmax, iYmax, MaxColorComponentValue);
 
-	// Gera uma quatro palavras de 32 bits, com valor PixelWidth por meio de funcoes intrinsecas
+	// Gera um vetor quatro palavras de 32 bits, com valor PixelWidth por meio de funcoes intrinsecas
 	__m128 PixelWidth128 = _mm_set1_ps(PixelWidth);
 	__m128 CxMin128 = _mm_set1_ps(CxMin);
 
